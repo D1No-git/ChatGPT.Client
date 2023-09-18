@@ -2,6 +2,7 @@
 using ChatGPT.Client.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Spectre.Console;
 
 public class Program
 {
@@ -44,9 +45,17 @@ public class Program
 
     private static void DisplayGreetingMessage()
     {
-        Console.ForegroundColor = ConsoleColor.DarkCyan;
-        Console.WriteLine("#################### ChatGPT ####################\n");
-        Console.ResetColor();
+        Console.Clear();
+        AnsiConsole.Write(
+            new FigletText("ChatGPT")
+                .Centered()
+                .Color(Color.DarkCyan)
+        );
+        AnsiConsole.WriteLine();
+
+        AnsiConsole.MarkupLine("[bold white]Please ask a question or type 'exit' to quit.[/]");
+
+        AnsiConsole.WriteLine();
     }
 
     private static async Task InteractWithUserAsync(IOpenAIService service)
@@ -58,44 +67,43 @@ public class Program
             if (prompt?.ToLower() == "exit")
                 break;
 
-            await DisplayGptResponseAsync(service, prompt!);
+            if (!string.IsNullOrWhiteSpace(prompt))
+            {
+                await DisplayGptResponseAsync(service, prompt);
+            }
         }
     }
 
     private static string? PromptUserForInput()
     {
-        Console.WriteLine();
-        Console.ForegroundColor = ConsoleColor.Magenta;
-        Console.WriteLine("Please enter a question (or type 'exit' to quit):");
-        Console.ResetColor();
-
-        return Console.ReadLine();
+        return AnsiConsole.Ask<string?>("[bold magenta]\nAsk:[/]");
     }
 
     private static async Task DisplayGptResponseAsync(IOpenAIService service, string prompt)
     {
         try
         {
-            Console.ForegroundColor = ConsoleColor.DarkCyan;
-            Console.WriteLine("\n-- ChatGPT response --");
-            Console.ResetColor();
+            AnsiConsole.MarkupLine("[bold darkcyan]ChatGPT is thinking...[/]");
 
             string? response = await service.GetGPTResponseAsync(prompt);
+
+            AnsiConsole.WriteLine();
 
             if (response != null)
             {
                 string[] words = response.Split(' ');
+                AnsiConsole.Markup("[bold darkcyan]ChatGPT:[/] ");
                 foreach (var word in words)
                 {
-                    Console.Write(word + " ");
+                    AnsiConsole.Markup(word + " ");
                     await Task.Delay(30); // Adjust the delay to fit your preference
                 }
-                Console.WriteLine();
+                AnsiConsole.WriteLine();
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"An error occurred: {ex.Message}");
+            AnsiConsole.MarkupLine("[bold red]An error occurred:[/] " + ex.Message);
         }
     }
 
